@@ -121,11 +121,10 @@ def load_attrdicts(fn):
     except IOError:
         return AttrDict()
 
-def locate(g, f, is_extra=False):
-    path = os.path.join(pathmap.get(g.key, g.key),
-                         (is_extra and "extra" or ""), f.name)
-    if not os.path.isfile(path) and os.path.isfile(f.name):
-        return f.name
+def locate(g, f=None, is_extra=False):
+    filename = f.name if f is not None else ""
+    path = os.path.join(pathmap.get(g.key, g.title),
+                         (is_extra and "extra" or ""), filename)
     return path
 
 def md5map(f, path):
@@ -338,7 +337,7 @@ def cmd_manifest():
     if FETCHCOVERS:
         def fetch(which, g):
             href = getattr(g, which)
-            path = pathmap.get(g.key, g.key)
+            path = locate(g)
             ext = os.path.splitext(href)[-1]
             fn = '{0}{1}'.format(which, ext)
             with request(href) as page:
