@@ -280,13 +280,6 @@ def cmd_manifest():
                 game_element = parser.parse(game_data['details']['html'])
             g.title = game_element.find(".//h2/a").text.strip()
 
-            # get thumbnail
-            with request(LIST) as list_page:
-                list_element = parser.parse(list_page).\
-                    find(".//div[@id='game_li_{0}']".format(g.key))
-                g.background = THUMB + list_element.attrib['data-background']
-                g.thumb = THUMB + list_element.find(".//img[@src]").\
-                                                            attrib['src']
             g.setup, g.extra = [], []
             # get setup downloader for windows
             for dl_link in game_element.findall((".//div[@class="
@@ -302,9 +295,16 @@ def cmd_manifest():
                 )
             games[g.key] = g
 
-        # if gamecard is not None:
-        #     g = games[gamecard.attrib['href'].split('/')[-1]]
-        #     g.cover = THUMB + game.find(".//img[@src]").attrib['src']
+        # get thumbnails
+        with request(LIST) as list_page:
+            list_page_dom = parser.parse(list_page)
+            for game in games.values():
+                list_element = list_page_dom.find(".//div[@id='game_li_{0}']".\
+                                                            format(game.key))
+                g.background = THUMB + list_element.attrib['data-background']
+                g.thumb = THUMB + list_element.find("./img[@src]").\
+                                                            attrib['src']
+
 
     # request a zero-length range from each file to determine
     # - the total size (from the Content-Range header)
@@ -527,7 +527,7 @@ def main(args):
     except IndexError:
         print >>sys.stderr, '%s: missing command' % arg0
         return 10
-    except KeyError:
+    except KeyError, e:
         print >>sys.stderr, '%s: invalid command %r' % (arg0, args[0])
         return 10
     except TypeError, e:
