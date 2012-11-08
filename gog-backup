@@ -362,10 +362,10 @@ def cmd_list():
         ssz = sum(f.size for f in g.setup)
         esz = sum(f.size for f in g.extra)
         total += ssz + esz
-        print '%s (%s)' % (g.key, g.title)
-        print '    %8s in %d setup files' % (megs(ssz), len(g.setup))
-        print '    %8s in %d extras' % (megs(esz), len(g.extra))
-    print '%d games, a total of %s' % (len(games), megs(total))
+        print u'%s (%s)' % (g.key, g.title)
+        print u'    %8s in %d setup files' % (megs(ssz), len(g.setup))
+        print u'    %8s in %d extras' % (megs(esz), len(g.extra))
+    print u'%d games, a total of %s' % (len(games), megs(total))
 
 def cmd_compare():
     # start the comparison from scratch
@@ -382,7 +382,7 @@ def cmd_fetch(fetch_all=None):
     _, games, _, _ = compare(valid)
     if fetch_all is None:
         for game in games[:]:
-            if raw_input("Download {0}? [Y/N]".\
+            if raw_input(u"Download {0}? [Y/N]".\
                     format(game.title)).upper() != 'Y':
                 games.remove(game)
     elif not (all == "--all" or "-a"):
