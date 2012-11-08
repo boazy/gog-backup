@@ -383,7 +383,7 @@ def cmd_fetch(fetch_all=None):
     if fetch_all is None:
         for game in games[:]:
             if raw_input("Download {0}? [Y/N]".\
-                    format(game.title.encode("utf-8"))).upper() != 'Y':
+                    format(game.title)).upper() != 'Y':
                 games.remove(game)
     elif not (all == "--all" or "-a"):
         raise RuntimeError("Unknown parameter supplied. Use --all or -a.")
