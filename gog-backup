@@ -22,8 +22,9 @@
 
 Possible commands:
 
-  login <email> <password>
-    Login to GOG.com using the supplied email and password.
+  login <email> [<password>]
+    Login to GOG.com using the supplied email and password. If password is not supplied, 
+    it is promted after start.
 
   manifest
     Create a manifest describing all games and extras owned by the
@@ -52,6 +53,7 @@ import cookielib, urllib, urllib2, urlparse
 import xml.etree.ElementTree
 import threading, Queue, time
 import json
+from getpass import getpass
 
 import html5lib  # http://code.google.com/p/html5lib/
 
@@ -226,7 +228,9 @@ def open_notrunc(name, bufsize=4*1024):
     fd = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_BINARY, 0666)
     return os.fdopen(fd, 'wb', bufsize)
 
-def cmd_login(email, passwd):
+def cmd_login(email, passwd=None):
+    if passwd is None:
+        passwd = getpass("Password: ")
     # Reset cookiejar
     cookiejar.clear()
     with request(AJAX_URL, args={'a' : 'get'}) as json_data:
