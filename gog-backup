@@ -269,42 +269,44 @@ def cmd_manifest():
 
     with request(SHELF) as page:
         etree = parser.parse(page)
-        for game in etree.findall(".//div[@class='shelf_game']"):
-            g = AttrDict()
-            g.key = game.attrib['data-gameid']
-            g.cover = THUMB +\
-                         game.find(".//img[@src]").attrib['src']
-            with request(ACCOUNT_AJAX_URL, args={'a': 'gamesShelfDetails',
-                                            'g': g.key}) as data_request:
-                game_data = json.load(data_request)
-                game_element = parser.parse(game_data['details']['html'])
-            g.title = game_element.find(".//h2/a").text.strip()
+    with request(LIST) as list_page:
+        list_etree = parser.parse(list_page)
 
-            g.setup, g.extra = [], []
-            # get setup downloader for windows
-            for dl_link in game_element.findall((".//div[@class="
-                        "'win-download']/a[@class='list_game_item']")):
-                g.setup.append(AttrDict(href=dl_link.attrib['href']))
+    for game in etree.findall(".//div[@class='shelf_game']"):
+        g = AttrDict()
+        g.key = game.attrib['data-gameid']
+        g.cover = THUMB +\
+                     game.find(".//img[@src]").attrib['src']
+        with request(ACCOUNT_AJAX_URL, args={'a': 'gamesShelfDetails',
+                                        'g': g.key}) as data_request:
+            game_data = json.load(data_request)
+        game_element = parser.parse(game_data['details']['html'])
+        g.title = game_element.find(".//h2/a").text.strip()
 
-            # get bonus material
-            for dl_link in game_element.findall((".//div[@class="
-                        "'bonus_content_list browser']/a")):
-                g.extra.append(AttrDict(
-                    href=THUMB + dl_link.attrib['href'],
-                    desc=dl_link.find("./span[@class='light_un']").text)
-                )
-            games[g.key] = g
+        # get thumbnail
+        list_element = list_etree.find(".//div[@id='game_li_{0}']".\
+                                                        format(g.key))
+        g.background = THUMB + list_element.attrib['data-background']
+        g.thumb = THUMB + list_element.find(".//img[@src]").\
+                                                        attrib['src']
+        g.setup, g.extra = [], []
+        # get setup downloader for windows
+        for dl_link in game_element.findall((".//div[@class="
+                    "'win-download']/a[@class='list_game_item']")):
+            g.setup.append(AttrDict(href=dl_link.attrib['href']))
 
-        # get thumbnails
-        with request(LIST) as list_page:
-            list_page_dom = parser.parse(list_page)
-            for game in games.values():
-                list_element = list_page_dom.find(".//div[@id='game_li_{0}']".\
-                                                            format(game.key))
-                g.background = THUMB + list_element.attrib['data-background']
-                g.thumb = THUMB + list_element.find("./img[@src]").\
-                                                            attrib['src']
+        # get bonus material
+        for dl_link in game_element.findall((".//div[@class="
+                    "'bonus_content_list browser']/a")):
+            g.extra.append(AttrDict(
+                href=THUMB + dl_link.attrib['href'],
+                desc=dl_link.find("./span[@class='light_un']").text)
+            )
+        games[g.key] = g
 
+        # if gamecard is not None:
+        #     g = games[gamecard.attrib['href'].split('/')[-1]]
+        #     g.cover = THUMB + game.find(".//img[@src]").attrib['src']
 
     # request a zero-length range from each file to determine
     # - the total size (from the Content-Range header)
@@ -527,7 +529,7 @@ def main(args):
     except IndexError:
         print >>sys.stderr, '%s: missing command' % arg0
         return 10
-    except KeyError, e:
+    except KeyError:
         print >>sys.stderr, '%s: invalid command %r' % (arg0, args[0])
         return 10
     except TypeError, e:
