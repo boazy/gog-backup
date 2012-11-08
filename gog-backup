@@ -334,9 +334,13 @@ def cmd_manifest():
             href = getattr(g, which)
             path = pathmap.get(g.key, g.key)
             ext = os.path.splitext(href)[-1]
-            fn = '%s_%s%s' % (g.key, which, ext)
+            fn = '{0}{1}'.format(which, ext)
             with request(href) as page:
-                with open(os.path.join(path, fn), 'wb') as w:
+                path = os.path.join(path, fn)
+                path_dir = os.path.dirname(path)
+                if not os.path.isdir(path_dir):
+                    os.mkdir(path_dir)
+                with open(path, 'wb') as w:
                     w.write(page.read())
         for g in games.values():
             fetch('cover', g)
