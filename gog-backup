@@ -125,6 +125,9 @@ def locate(g, f=None, is_extra=False):
     filename = f.name if f is not None else ""
     path = os.path.join(pathmap.get(g.key, g.title),
                          (is_extra and "extra" or ""), filename)
+    # what does it do?
+    if not os.path.isfile(path) and os.path.isfile(filename):
+        return filename
     return path
 
 def md5map(f, path):
