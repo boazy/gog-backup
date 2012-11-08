@@ -120,8 +120,9 @@ def load_attrdicts(fn):
     except IOError:
         return AttrDict()
 
-def locate(g, f):
-    path = os.path.join(pathmap.get(g.key, g.key), f.name)
+def locate(g, f, is_extra=False):
+    path = os.path.join(pathmap.get(g.key, g.key),
+                         (is_extra and "extra" or ""), f.name)
     if not os.path.isfile(path) and os.path.isfile(f.name):
         return f.name
     return path
@@ -227,7 +228,11 @@ def needed(valid, games, missing, corrupt):
 
 def open_notrunc(name, bufsize=4*1024):
     # 'w+' includes O_TRUNC, 'r+' lacks O_CREAT; so, roll my own
-    fd = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_BINARY, 0666)
+    flags = os.O_WRONLY | os.O_CREAT
+    if hasattr(os, "O_BINARY"):
+        # exists only on windows
+        flags |= os.O_BINARY
+    fd = os.open(name, flags, 0666)
     return os.fdopen(fd, 'wb', bufsize)
 
 def cmd_login(email, passwd=None):
@@ -378,11 +383,12 @@ def cmd_fetch():
 
     # build a list of work items
     work = Queue.PriorityQueue()
-    i = -sys.maxint
+    i = -sys.maxint 
+
     for g in games:
         for f in g.setup + g.extra:
             v = valid[(g.key, f.name)]
-            path = locate(g, f)
+            path = locate(g, f, f in g.extra)
             dn = os.path.dirname(path)
             if dn and not os.path.isdir(dn):
                 os.makedirs(dn)
@@ -401,6 +407,7 @@ def cmd_fetch():
                 work.put((prio, args))
                 sz = end + 1 - start
                 sizes[path] = sz + sizes.get(path, 0)
+            
 
     # work item I/O loop
     def ioloop(tid, path, page, out):
