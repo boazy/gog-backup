@@ -291,13 +291,24 @@ def cmd_manifest():
     #     games[g.key] = g
 
     # match games to covers on the shelf page
-    print 'Getting shelf'
     with request(SHELF) as page:
         etree = parser.parse(page)
-        for game in etree.findall(".//div[@class='shelf_game']"):
+        for game in etree.findall(".//div[@class='shelf_game']")[:1]:
+            g = AttrDict()
+            g.key = game.attrib['data-gameid']
             with request(ACCOUNT_AJAX_URL, args={'a' : 'gamesShelfDetails',
-                                            'g' : game.attrib['data-gameid']}) as data_request:
+                                            'g' : g.key}) as data_request:
                 game_data = json.load(data_request)
+                game_element = parser.parse(game_data['details']['html'])
+                g.setup, g.extra = [], []
+                for dl_link in game_element.findall((".//div[@class="
+                            "'win-download']/a[@class='list_game_item']")):
+                    g.setup.append(dl_link.attrib['href'])
+                print g
+
+                # TODO: parse data
+                # id = data-gameid
+                # get cover
         
         # if gamecard is not None:
         #     g = games[gamecard.attrib['href'].split('/')[-1]]
