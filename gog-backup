@@ -68,8 +68,9 @@ VALIDATED = '.gog.valid.py'
 
 LOGIN = 'https://secure.gog.com/en/login'
 AJAX_URL = 'http://www.gog.com/user/ajax/'
-SHELF = 'https://www.gog.com/en/myaccount/shelf'
-LIST = 'https://www.gog.com/en/myaccount/list'
+ACCOUNT_AJAX_URL = 'https://secure.gog.com/en/account/ajax'
+SHELF = 'https://secure.gog.com/account/games'
+LIST = 'https://secure.gog.com/account/wishlist'
 THUMB = 'http://www.gog.com'
 
 pathmap = {}
@@ -259,41 +260,48 @@ def cmd_manifest():
     games = {}
 
     # parse game list and available files for each from list page
-    with request(LIST) as page:
-        etree = parser.parse(page)
-    for game in etree.findall(".//div[@class='tab_1_row']"):
-        gamecard = game.find(".//div[@class='tab_1_title']/a")
-        if gamecard is None:
-            # happens with "Colin McRae Rally 2005", among others
-            g = game.find(".//div[@class='tab_1_title']/span")
-            print 'WARNING: no gamecard link for %s?!' % (g.text,)
-            print '    Did GOG.com stop selling this game?'
-            continue
-        g = AttrDict()
-        g.key = gamecard.attrib['href'].split('/')[-1]
-        g.title = gamecard.text
-        g.thumb = THUMB + game.find(".//img[@src]").attrib['src']
-        g.setup, g.extra = [], []
-        for row in game.findall(".//div[@class='sh_o_i_row']"):
-            f = AttrDict()
-            f.href = row.attrib.get('onclick', '')
-            if not 'download/file' in f.href:
-                f.href = row.find(".//a").attrib['href']
-                g.setup.append(f)
-            else:
-                f.href = f.href[f.href.index('http:') : -1]
-                f.desc = row.find(".//div[@class='sh_o_i_text']/span").text
-                g.extra.append(f)
-        games[g.key] = g
+    # with request(LIST) as page:
+    #     etree = parser.parse(page)
+    # for game in etree.findall(".//div[@class='shelf_game']/@data-gameid"):
+    #     with request(AJAX_URL, args={'a' : 'gamesShelfDetails',
+    #                                     'g' : game}) as data_request:
+    #         print json.loads(data_request)
+    #     gamecard = game.find(".//div[@class='tab_1_title']/a")
+    #     if gamecard is None:
+    #         # happens with "Colin McRae Rally 2005", among others
+    #         g = game.find(".//div[@class='tab_1_title']/span")
+    #         print 'WARNING: no gamecard link for %s?!' % (g.text,)
+    #         print '    Did GOG.com stop selling this game?'
+    #         continue
+    #     g = AttrDict()
+    #     g.key = gamecard.attrib['href'].split('/')[-1]
+    #     g.title = gamecard.text
+    #     g.thumb = THUMB + game.find(".//img[@src]").attrib['src']
+    #     g.setup, g.extra = [], []
+    #     for row in game.findall(".//div[@class='sh_o_i_row']"):
+    #         f = AttrDict()
+    #         f.href = row.attrib.get('onclick', '')
+    #         if not 'download/file' in f.href:
+    #             f.href = row.find(".//a").attrib['href']
+    #             g.setup.append(f)
+    #         else:
+    #             f.href = f.href[f.href.index('http:') : -1]
+    #             f.desc = row.find(".//div[@class='sh_o_i_text']/span").text
+    #             g.extra.append(f)
+    #     games[g.key] = g
 
     # match games to covers on the shelf page
+    print 'Getting shelf'
     with request(SHELF) as page:
         etree = parser.parse(page)
-    for game in etree.findall(".//div[@class='shelf_item_h']"):
-        gamecard = game.find(".//div[@class='shelf_ov_tab_2_title']/a")
-        if gamecard is not None:
-            g = games[gamecard.attrib['href'].split('/')[-1]]
-            g.cover = THUMB + game.find(".//img[@src]").attrib['src']
+        for game in etree.findall(".//div[@class='shelf_game']"):
+            with request(ACCOUNT_AJAX_URL, args={'a' : 'gamesShelfDetails',
+                                            'g' : game.attrib['data-gameid']}) as data_request:
+                game_data = json.load(data_request)
+        
+        # if gamecard is not None:
+        #     g = games[gamecard.attrib['href'].split('/')[-1]]
+        #     g.cover = THUMB + game.find(".//img[@src]").attrib['src']
 
     # request a zero-length range from each file to determine
     # - the total size (from the Content-Range header)
