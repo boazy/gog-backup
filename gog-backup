@@ -60,7 +60,7 @@ import html5lib  # http://code.google.com/p/html5lib/
 BACKUPINTO = '.'
 CONCURRENCY = 6
 BREADTHFIRST = False
-FETCHCOVERS = False
+FETCHCOVERS = True
 PATHMAP = '.gog.pathmap.txt'
 COOKIES = '.gog.cookies'
 MANIFEST = '.gog.games.py'
@@ -70,6 +70,8 @@ LOGIN = 'https://secure.gog.com/en/login'
 AJAX_URL = 'http://www.gog.com/user/ajax/'
 ACCOUNT_AJAX_URL = 'https://secure.gog.com/en/account/ajax'
 SHELF = 'https://secure.gog.com/account/games/shelf'
+# match games to covers on the shelf page
+LIST = 'https://secure.gog.com/account/games/list'
 THUMB = 'http://www.gog.com'
 
 pathmap = {}
@@ -263,26 +265,32 @@ def cmd_manifest():
         for game in etree.findall(".//div[@class='shelf_game']"):
             g = AttrDict()
             g.key = game.attrib['data-gameid']
-            g.thumb = g.cover = THUMB +\
+            g.cover = THUMB +\
                          game.find(".//img[@src]").attrib['src']
             with request(ACCOUNT_AJAX_URL, args={'a' : 'gamesShelfDetails',
                                             'g' : g.key}) as data_request:
                 game_data = json.load(data_request)
                 game_element = parser.parse(game_data['details']['html'])
-                g.title = game_element.find(".//h2/a").text.strip()
-                g.setup, g.extra = [], []
-                # get setup downloader for windows
-                for dl_link in game_element.findall((".//div[@class="
-                            "'win-download']/a[@class='list_game_item']")):
-                    g.setup.append(AttrDict(href=dl_link.attrib['href']))
+            g.title = game_element.find(".//h2/a").text.strip()
 
-                # get bonus material
-                for dl_link in game_element.findall((".//div[@class="
-                            "'bonus_content_list browser']/a")):
-                    g.extra.append(AttrDict(
-                        href=THUMB + dl_link.attrib['href'],
-                        desc=dl_link.find("./span[@class='light_un']").text)
-                    )
+            # get thumbnail
+            with request(LIST) as list_page:
+                list_element = parser.parse(list_page).find(".//div[@id='game_li_{0}']".format(g.key))
+                g.background = THUMB + list_element.attrib['data-background']
+                g.thumb = THUMB + list_element.find(".//img[@src]").attrib['src']
+            g.setup, g.extra = [], []
+            # get setup downloader for windows
+            for dl_link in game_element.findall((".//div[@class="
+                        "'win-download']/a[@class='list_game_item']")):
+                g.setup.append(AttrDict(href=dl_link.attrib['href']))
+
+            # get bonus material
+            for dl_link in game_element.findall((".//div[@class="
+                        "'bonus_content_list browser']/a")):
+                g.extra.append(AttrDict(
+                    href=THUMB + dl_link.attrib['href'],
+                    desc=dl_link.find("./span[@class='light_un']").text)
+                )
             games[g.key] = g
 
         
@@ -320,7 +328,7 @@ def cmd_manifest():
         print >>w, '# %d games' % len(games)
         pprint.pprint(games.values(), width=100, stream=w)
 
-    # optionally download cover and thumbnail
+    # optionally download cover, background and thumbnail
     if FETCHCOVERS:
         def fetch(which, g):
             href = getattr(g, which)
@@ -333,6 +341,7 @@ def cmd_manifest():
         for g in games.values():
             fetch('cover', g)
             fetch('thumb', g)
+            fetch('background', g)
 
 def cmd_list():
     # summarize the manifest
