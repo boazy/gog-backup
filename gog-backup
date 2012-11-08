@@ -49,7 +49,7 @@ __author__ = 'Evan Powers'
 __version__ = '1.0'
 __url__ = 'https://github.com/evanpowers/gog-backup'
 
-import sys, os, contextlib, pprint, hashlib, zipfile
+import sys, os, codecs, contextlib, pprint, hashlib, locale, zipfile
 import cookielib, urllib, urllib2, urlparse
 import xml.etree.ElementTree
 import threading, Queue, time
@@ -81,6 +81,7 @@ cookieproc = urllib2.HTTPCookieProcessor(cookiejar)
 opener = urllib2.build_opener(cookieproc)
 treebuilder = html5lib.treebuilders.getTreeBuilder('etree')
 parser = html5lib.HTMLParser(tree=treebuilder, namespaceHTMLElements=False)
+sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
 
 useragent = 'gog-backup/%s (%s)' % (__version__, __url__)
 opener.addheaders = [('User-agent', useragent)]
