@@ -39,9 +39,10 @@ Possible commands:
     and print a report on what must be downloaded. 'compare' validates
     everything; 'update' only validates new files.
 
-  fetch
+  fetch [--all|-a]
     Download any missing, incomplete, or corrupted files (after an
-    implicit 'update').
+    implicit 'update'). If --all is specified, dowloads every game, else
+    prompts for comfirmation.
 """
 
 __author__ = 'Evan Powers'

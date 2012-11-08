@@ -144,7 +144,7 @@ run ``gog-backup --help``.
   downloading files (perhaps waiting an appropriate period between
   invocations if GOG.com is experiencing high load). By default, game
   files are placed in per-game sub-directories of the current working
-  directory.
+  directory. Use --all to avoid prompting for input.
 
 Therefore, the simplest command flow would be to first ``login``, then
 download a ``manifest``, then ``fetch`` one or more times.
