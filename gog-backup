@@ -51,6 +51,7 @@ import sys, os, contextlib, pprint, hashlib, zipfile
 import cookielib, urllib, urllib2, urlparse
 import xml.etree.ElementTree
 import threading, Queue, time
+import json
 
 import html5lib  # http://code.google.com/p/html5lib/
 
@@ -63,7 +64,8 @@ COOKIES = '.gog.cookies'
 MANIFEST = '.gog.games.py'
 VALIDATED = '.gog.valid.py'
 
-LOGIN = 'https://www.gog.com/en/login'
+LOGIN = 'https://secure.gog.com/en/login'
+AJAX_URL = 'http://www.gog.com/user/ajax/'
 SHELF = 'https://www.gog.com/en/myaccount/shelf'
 LIST = 'https://www.gog.com/en/myaccount/list'
 THUMB = 'http://www.gog.com'
@@ -223,12 +225,22 @@ def open_notrunc(name, bufsize=4*1024):
     return os.fdopen(fd, 'wb', bufsize)
 
 def cmd_login(email, passwd):
+    with request(AJAX_URL, args={'a' : 'get'}) as json_data:
+        data = json.load(json_data)
+        buk = data['buk']
+        print buk
+
     with request(LOGIN, args={'log_email': email,
-                              'log_password': passwd}) as page:
+                              'log_password': passwd,
+                              'redirectOk': '/en/',
+                              'unlockSettings': '1',
+                              'buk': buk,
+}) as page:
         etree = parser.parse(page)
     if etree.find(".//div[@id='register_holder']") is not None:
         # this element is only present if not logged in
-        raise RuntimeError('login failed')
+        # raise RuntimeError('login failed')
+        print "Blub"
     cookiejar.save()
 
 def cmd_manifest():
