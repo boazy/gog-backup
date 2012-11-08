@@ -77,6 +77,8 @@ opener = urllib2.build_opener(cookieproc)
 treebuilder = html5lib.treebuilders.getTreeBuilder('etree')
 parser = html5lib.HTMLParser(tree=treebuilder, namespaceHTMLElements=False)
 
+from IPython import embed
+
 useragent = 'gog-backup/%s (%s)' % (__version__, __url__)
 opener.addheaders = [('User-agent', useragent)]
 
@@ -225,22 +227,28 @@ def open_notrunc(name, bufsize=4*1024):
     return os.fdopen(fd, 'wb', bufsize)
 
 def cmd_login(email, passwd):
+    # Reset cookiejar
+    cookiejar.clear()
     with request(AJAX_URL, args={'a' : 'get'}) as json_data:
         data = json.load(json_data)
         buk = data['buk']
-        print buk
 
     with request(LOGIN, args={'log_email': email,
                               'log_password': passwd,
                               'redirectOk': '/en/',
                               'unlockSettings': '1',
                               'buk': buk,
-}) as page:
-        etree = parser.parse(page)
-    if etree.find(".//div[@id='register_holder']") is not None:
-        # this element is only present if not logged in
-        # raise RuntimeError('login failed')
-        print "Blub"
+                                }) as page:
+        pass
+
+    guc_al = None
+    for c in cookiejar:
+        if c.name == 'guc_al':
+            guc_al = c
+            break
+    if not guc_al or guc_al.value == '0':
+        raise RuntimeError("Login failed")
+
     cookiejar.save()
 
 def cmd_manifest():
