@@ -281,9 +281,11 @@ def cmd_manifest():
 
             # get thumbnail
             with request(LIST) as list_page:
-                list_element = parser.parse(list_page).find(".//div[@id='game_li_{0}']".format(g.key))
+                list_element = parser.parse(list_page).\
+                    find(".//div[@id='game_li_{0}']".format(g.key))
                 g.background = THUMB + list_element.attrib['data-background']
-                g.thumb = THUMB + list_element.find(".//img[@src]").attrib['src']
+                g.thumb = THUMB + list_element.find(".//img[@src]").\
+                                                            attrib['src']
             g.setup, g.extra = [], []
             # get setup downloader for windows
             for dl_link in game_element.findall((".//div[@class="
