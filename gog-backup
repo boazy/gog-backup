@@ -23,8 +23,8 @@
 Possible commands:
 
   login <email> [<password>]
-    Login to GOG.com using the supplied email and password. If password is not supplied, 
-    it is promted after start.
+    Login to GOG.com using the supplied email and password.
+    If password is not supplied, user is promted after start.
 
   manifest
     Create a manifest describing all games and extras owned by the
@@ -87,6 +87,7 @@ from IPython import embed
 useragent = 'gog-backup/%s (%s)' % (__version__, __url__)
 opener.addheaders = [('User-agent', useragent)]
 
+
 class AttrDict(dict):
     def __init__(self, **kw):
         self.update(kw)
@@ -129,7 +130,6 @@ def locate(g, f, is_extra=False):
     return path
 
 def md5map(f, path):
-    print '#', path
     H = hashlib.md5()
     part = []
     with open(path, 'rb') as r:
@@ -241,7 +241,7 @@ def cmd_login(email, passwd=None):
         passwd = getpass("Password: ")
     # Reset cookiejar
     cookiejar.clear()
-    with request(AJAX_URL, args={'a' : 'get'}) as json_data:
+    with request(AJAX_URL, args={'a': 'get'}) as json_data:
         data = json.load(json_data)
         buk = data['buk']
 
@@ -273,8 +273,8 @@ def cmd_manifest():
             g.key = game.attrib['data-gameid']
             g.cover = THUMB +\
                          game.find(".//img[@src]").attrib['src']
-            with request(ACCOUNT_AJAX_URL, args={'a' : 'gamesShelfDetails',
-                                            'g' : g.key}) as data_request:
+            with request(ACCOUNT_AJAX_URL, args={'a': 'gamesShelfDetails',
+                                            'g': g.key}) as data_request:
                 game_data = json.load(data_request)
                 game_element = parser.parse(game_data['details']['html'])
             g.title = game_element.find(".//h2/a").text.strip()
@@ -301,7 +301,6 @@ def cmd_manifest():
                 )
             games[g.key] = g
 
-        
         # if gamecard is not None:
         #     g = games[gamecard.attrib['href'].split('/')[-1]]
         #     g.cover = THUMB + game.find(".//img[@src]").attrib['src']
@@ -394,7 +393,7 @@ def cmd_fetch(fetch_all=None):
 
     # build a list of work items
     work = Queue.PriorityQueue()
-    i = -sys.maxint 
+    i = -sys.maxint
 
     for g in games:
         for f in g.setup + g.extra:
@@ -418,7 +417,6 @@ def cmd_fetch(fetch_all=None):
                 work.put((prio, args))
                 sz = end + 1 - start
                 sizes[path] = sz + sizes.get(path, 0)
-            
 
     # work item I/O loop
     def ioloop(tid, path, page, out):
