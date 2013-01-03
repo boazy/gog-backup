@@ -67,7 +67,7 @@ COOKIES = '.gog.cookies'
 MANIFEST = '.gog.games.py'
 VALIDATED = '.gog.valid.py'
 
-LOGIN = 'https://secure.gog.com/en/login'
+LOGIN = 'https://secure.gog.com/login'
 AJAX_URL = 'http://www.gog.com/user/ajax/'
 ACCOUNT_AJAX_URL = 'https://secure.gog.com/en/account/ajax'
 SHELF = 'https://secure.gog.com/account/games/shelf'
