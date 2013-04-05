@@ -68,6 +68,7 @@ PATHMAP = '.gog.pathmap.txt'
 COOKIES = '.gog.cookies'
 MANIFEST = '.gog.games.py'
 VALIDATED = '.gog.valid.py'
+UNIQUEDIRNAMES = True
 
 LOGIN = 'https://secure.gog.com/login'
 AJAX_URL = 'http://www.gog.com/user/ajax/'
@@ -127,8 +128,12 @@ def load_attrdicts(fn):
         return AttrDict()
 
 def locate(g, f=None, is_extra=False):
+    if UNIQUEDIRNAMES:
+        default_dir = g.unique_name
+    else:
+        default_dir = g.title
     filename = f.name if f is not None else ""
-    path = os.path.join(pathmap.get(g.key, g.title),
+    path = os.path.join(pathmap.get(g.key, default_dir),
                          (is_extra and "extra" or ""), filename)
     # what does it do?
     if not os.path.isfile(path) and os.path.isfile(filename):
@@ -278,7 +283,7 @@ def request_page(name, page_num):
         return page_data['html'], page_data['count']
 
 def request_all_pages(name):
-    html = '<html>\n<head></head>\n<body>\n'
+    html = u'<html>\n<head></head>\n<body>\n'
 
     i = 1
     total_count = 0
@@ -295,7 +300,7 @@ def request_all_pages(name):
         html += page_html
         i += 1
 
-    html += '\n<body>\n</html>\n'
+    html += u'\n<body>\n</html>\n'
     print 'Total paged items: %d' % total_count
     return html
 
@@ -317,6 +322,7 @@ def cmd_manifest():
             game_data = json.load(data_request)
         game_element = parser.parse(game_data['details']['html'])
         g.title = game_element.find(".//h2/a").text.strip()
+        g.unique_name = game_data['details']['gameIndex']
 
         # get thumbnail
         list_element = list_etree.find(".//div[@id='game_li_{0}']".\
