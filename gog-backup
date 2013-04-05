@@ -60,8 +60,10 @@ import html5lib  # http://code.google.com/p/html5lib/
 
 BACKUPINTO = '.'
 CONCURRENCY = 6
+MAXPAGELIMIT = 100
 BREADTHFIRST = False
 FETCHCOVERS = False
+DEBUGPROXY = False
 PATHMAP = '.gog.pathmap.txt'
 COOKIES = '.gog.cookies'
 MANIFEST = '.gog.games.py'
@@ -78,14 +80,17 @@ THUMB = 'http://www.gog.com'
 pathmap = {}
 cookiejar = cookielib.LWPCookieJar(COOKIES)
 cookieproc = urllib2.HTTPCookieProcessor(cookiejar)
-opener = urllib2.build_opener(cookieproc)
+if DEBUGPROXY:
+    proxy_handler = urllib2.ProxyHandler({'https': 'https://127.0.0.1:8888'})
+    opener = urllib2.build_opener(proxy_handler, cookieproc, urllib2.HTTPHandler(debuglevel=1))
+else:
+    opener = urllib2.build_opener(cookieproc)
 treebuilder = html5lib.treebuilders.getTreeBuilder('etree')
 parser = html5lib.HTMLParser(tree=treebuilder, namespaceHTMLElements=False)
 sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
 
 useragent = 'gog-backup/%s (%s)' % (__version__, __url__)
 opener.addheaders = [('User-agent', useragent)]
-
 
 class AttrDict(dict):
     def __init__(self, **kw):
@@ -264,13 +269,43 @@ def cmd_login(email, passwd=None):
 
     cookiejar.save()
 
+def request_page(name, page_num):
+    with request(ACCOUNT_AJAX_URL, args={'a': name, 'p': page_num, 's': 'date_purchased',
+                                         'q': '', 't': 0, 'h': 0}) as data_request:
+        page_data = json.load(data_request)
+        if page_data['result'] != 'ok':
+            raise ValueError
+        return page_data['html'], page_data['count']
+
+def request_all_pages(name):
+    html = '<html>\n<head></head>\n<body>\n'
+
+    i = 1
+    total_count = 0
+    while True:
+        if i > MAXPAGELIMIT:
+            print 'Max page limit exceeded'
+            break
+
+        page_html, page_count = request_page(name, i)
+        if page_count == 0:
+            break
+        total_count += page_count
+
+        html += page_html
+        i += 1
+
+    html += '\n<body>\n</html>\n'
+    print 'Total paged items: %d' % total_count
+    return html
+
 def cmd_manifest():
     games = {}
 
-    with request(SHELF) as page:
-        etree = parser.parse(page)
-    with request(LIST) as list_page:
-        list_etree = parser.parse(list_page)
+    page_html = request_all_pages('gamesShelfMore')
+    etree = parser.parse(page_html)
+    page_html = request_all_pages('gamesListMore')
+    list_etree = parser.parse(page_html)
 
     for game in etree.findall(".//div[@class='shelf_game']"):
         g = AttrDict()
