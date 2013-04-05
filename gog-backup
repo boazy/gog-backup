@@ -69,6 +69,7 @@ COOKIES = '.gog.cookies'
 MANIFEST = '.gog.games.py'
 VALIDATED = '.gog.valid.py'
 UNIQUEDIRNAMES = True
+GAMELANGUAGE = 'en'
 
 LOGIN = 'https://secure.gog.com/login'
 AJAX_URL = 'http://www.gog.com/user/ajax/'
@@ -332,8 +333,9 @@ def cmd_manifest():
                                                         attrib['src']
         g.setup, g.extra = [], []
         # get setup downloader for windows
-        for dl_link in game_element.findall((".//div[@class="
-                    "'win-download']/a[@class='list_game_item']")):
+        dl_link_query = ".//div[@class='win-download dldl']/div[@class='lang-item lang_%s']/a[@class='list_game_item']" \
+                        % GAMELANGUAGE
+        for dl_link in game_element.findall(dl_link_query):
             g.setup.append(AttrDict(href=dl_link.attrib['href']))
 
         # get bonus material
